@@ -1,0 +1,23 @@
+{
+  "parameters": {
+    "method": "POST",
+    "url": "https://your-app.vercel.app/api/receive-response",
+    "authentication": "none",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ {\n  \"sessionId\": $json.sessionId,\n  \"reply\": $json.reply\n} }}",
+    "options": {
+      "timeout": 10000,
+      "retry": {
+        "enabled": false
+      }
+    }
+  },
+  "name": "Send to Vercel API",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.2,
+  "position": [
+    820,
+    300
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "name": "Chat - Multiple Async Responses",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "chat-webhook"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}"
+            },
+            {
+              "name": "userMessage",
+              "value": "={{ $json.body.message }}"
+            },
+            {
+              "name": "username",
+              "value": "={{ $json.body.username }}"
+            },
+            {
+              "name": "vercelApiUrl",
+              "value": "https://your-app.vercel.app/api/receive-response"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-variables",
+      "name": "Set Variables",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"Set Variables\"].json[\"vercelApiUrl\"] }}",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sessionId",
+              "value": "={{ $node[\"Set Variables\"].json[\"sessionId\"] }}"
+            },
+            {
+              "name": "reply",
+              "value": "🔍 Analyzing your message..."
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "id": "http-response-1",
+      "name": "HTTP Response #1 - Analyzing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "wait-1",
+      "name": "Wait 2s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "webhookId": "wait-webhook-1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"Set Variables\"].json[\"vercelApiUrl\"] }}",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sessionId",
+              "value": "={{ $node[\"Set Variables\"].json[\"sessionId\"] }}"
+            },
+            {
+              "name": "reply",
+              "value": "⚙️ Processing your message: {{ $node[\"Set Variables\"].json[\"userMessage\"] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "id": "http-response-2",
+      "name": "HTTP Response #2 - Processing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "wait-2",
+      "name": "Wait 2s (2)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "webhookId": "wait-webhook-2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node[\"Set Variables\"].json[\"vercelApiUrl\"] }}",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sessionId",
+              "value": "={{ $node[\"Set Variables\"].json[\"sessionId\"] }}"
+            },
+            {
+              "name": "reply",
+              "value": "✅ Completed! Your message was: \"{{ $node[\"Set Variables\"].json[\"userMessage\"] }}\"\n\nThis is a demo response. To add AI, replace this node with an OpenAI/Claude node and use its output here."
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "id": "http-response-3",
+      "name": "HTTP Response #3 - Final",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Processing started\",\n  \"sessionId\": \"{{ $node[\"Set Variables\"].json[\"sessionId\"] }}\"\n}",
+        "options": {}
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Variables": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response #1 - Analyzing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Response #1 - Analyzing": {
+      "main": [
+        [
+          {
+            "node": "Wait 2s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2s": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response #2 - Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Response #2 - Processing": {
+      "main": [
+        [
+          {
+            "node": "Wait 2s (2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2s (2)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Response #3 - Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Response #3 - Final": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-30T00:00:00.000Z",
+  "versionId": "1"
+}
