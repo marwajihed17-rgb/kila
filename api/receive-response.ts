@@ -128,14 +128,20 @@ export default async function handler(
 
     // Private channels in Pusher must be prefixed with "private-"
     const channelName = `private-chat-${conversationId.trim()}`;
+    const publicChannel = `chat-${conversationId.trim()}`;
 
     // Publish the event to Pusher
     console.log(`[receive-response] Publishing message to channel ${channelName}`);
 
     try {
-      await pusher.trigger(channelName, 'new-message', {
+      await pusher.trigger(channelName, 'message', {
         conversationId: conversationId.trim(),
         reply,
+        timestamp: Date.now()
+      });
+      await pusher.trigger(publicChannel, 'message', {
+        role: 'assistant',
+        text: reply,
         timestamp: Date.now()
       });
 

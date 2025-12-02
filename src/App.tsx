@@ -6,11 +6,17 @@ import { KDRProcessing } from "./components/KDRProcessing";
 import { GAProcessing } from "./components/GAProcessing";
 import { KDRInvoicing } from "./components/KDRInvoicing";
 import { ChatInterface } from "./components/ChatInterface";
+import { ChatWindow } from "./components/chat/ChatWindow";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<
     "login" | "dashboard" | "invoice" | "kdr" | "ga" | "kdr-invoicing" | "chat"
   >("login");
+
+  const initialPath = typeof window !== 'undefined' ? window.location.pathname : '/'
+  if (initialPath === '/chat' && currentPage !== 'chat') {
+    setCurrentPage('chat')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#1a1233] to-[#0f1419] relative overflow-hidden">
@@ -65,10 +71,7 @@ export default function App() {
           />
         )}
         {currentPage === "chat" && (
-          <ChatInterface
-            onBack={() => setCurrentPage("dashboard")}
-            onLogout={() => setCurrentPage("login")}
-          />
+          <ChatWindow />
         )}
       </div>
     </div>
