@@ -1,121 +1,72 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { NextApiRequest, NextApiResponse } from "next";
 import Pusher from "pusher";
 
 // -------------------------
-// Helper: Check Pusher env
+//  SAFE PUSHER INITIALIZER
 // -------------------------
-function isPusherConfigured(): boolean {
-  return (
-    !!process.env.PUSHER_APP_ID &&
-    !!process.env.PUSHER_KEY &&
-    !!process.env.PUSHER_SECRET &&
-    !!process.env.PUSHER_CLUSTER
-  );
-}
-
 function getPusher(): Pusher {
   return new Pusher({
     appId: process.env.PUSHER_APP_ID!,
-    key: process.env.PUSHER_KEY!,
+    key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
     secret: process.env.PUSHER_SECRET!,
-    cluster: process.env.PUSHER_CLUSTER!,
+    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     useTLS: true,
   });
 }
 
 // -------------------------
-// Main handler
+//  API ROUTE HANDLER
 // -------------------------
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   try {
-    // CORS
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Content-Type", "application/json");
-
-    if (req.method === "OPTIONS") {
-      return res.status(200).end();
-    }
-
+    // 1) METHOD CHECK
     if (req.method !== "POST") {
-      return res.status(405).json({ success: false, error: "Method not allowed" });
+      return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    //------------------------------------
-    // 1. FIX: Ensure body is parsed safely
-    //------------------------------------
-    let body: any = req.body;
-
-    if (!body || typeof body === "string") {
-      try {
-        body = JSON.parse(body || "{}");
-      } catch (err) {
-        return res.status(400).json({
-          success: false,
-          error: "Invalid JSON body",
-        });
-      }
+    // 2) BODY CHECK
+    if (!req.body) {
+      return res.status(400).json({ error: "Missing JSON body" });
     }
 
-    const { conversationId, reply } = body;
+    const { conversationId, message, userId } = req.body;
 
-    //------------------------------------
-    // 2. Validate data
-    //------------------------------------
-    if (!conversationId || typeof conversationId !== "string") {
+    // 3) REQUIRED FIELD VALIDATION
+    if (!conversationId || !message || !userId) {
       return res.status(400).json({
-        success: false,
-        error: "conversationId must be a string",
+        error: "Missing required fields: conversationId, message, userId",
       });
     }
 
-    if (!reply || typeof reply !== "string") {
-      return res.status(400).json({
-        success: false,
-        error: "reply must be a string",
-      });
-    }
-
-    //------------------------------------
-    // 3. Validate Pusher config
-    //------------------------------------
-    if (!isPusherConfigured()) {
-      return res.status(503).json({
-        success: false,
-        error: "Pusher not configured on server",
-      });
-    }
-
-    const pusher = getPusher();
-    const channel = `chat-${conversationId}`;
-
-    //------------------------------------
-    // 4. Trigger message to frontend
-    //------------------------------------
-    await pusher.trigger(channel, "message", {
-      role: "assistant",
-      text: reply,
+    // 4) PREPARE PAYLOAD
+    const payload = {
       conversationId,
+      message,
+      userId,
+      from: "n8n-response",
       timestamp: Date.now(),
-    });
+    };
 
-    console.log("Message sent to:", channel, "reply:", reply);
+    // 5) SEND THROUGH PUSHER
+    const channel = `chat-${conversationId}`;
+    const pusher = getPusher();
 
+    await pusher.trigger(channel, "new-message", payload);
+
+    // 6) RETURN TO N8N (VERY IMPORTANT)
     return res.status(200).json({
       success: true,
-      message: "Delivered",
+      sentTo: channel,
+      payload,
     });
-
   } catch (err: any) {
     console.error("CRASH IN receive-response:", err);
-
-    if (!res.headersSent) {
-      return res.status(500).json({
-        success: false,
-        error: "Server crashed",
-        details: err?.message || "Unknown error",
-      });
-    }
+    return res.status(500).json({
+      error: "Internal server error",
+      details: err?.message,
+    });
   }
 }
