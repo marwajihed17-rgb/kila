@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Pusher from 'pusher-js'
 import { ChatMessages, ChatMessage } from './ChatMessages'
 import { ChatInput, AttachmentInput } from './ChatInput'
@@ -126,4 +126,3 @@ export function ChatWindow() {
     </div>
   )
 }
-

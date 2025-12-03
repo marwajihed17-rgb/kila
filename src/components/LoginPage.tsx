@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { AnimatedLogo } from './AnimatedLogo';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { apiService } from '../services/api';

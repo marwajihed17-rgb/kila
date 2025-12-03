@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { MessageBubble } from './MessageBubble'
 
 export type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; timestamp: number; attachments?: { id: string; name: string; type: string; url?: string }[] }
@@ -29,4 +29,3 @@ export function ChatMessages({ messages, isTyping }: { messages: ChatMessage[]; 
     </div>
   )
 }
-

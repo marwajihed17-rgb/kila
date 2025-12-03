@@ -244,8 +244,8 @@ class ApiService {
   }
 
   async getMessages(
-    category?: string,
-    userId?: string
+    _category?: string,
+    _userId?: string
   ): Promise<MessageResponse> {
     // For now, return empty messages
     return {

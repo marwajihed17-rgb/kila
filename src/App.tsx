@@ -5,7 +5,6 @@ import { InvoiceProcessing } from "./components/InvoiceProcessing";
 import { KDRProcessing } from "./components/KDRProcessing";
 import { GAProcessing } from "./components/GAProcessing";
 import { KDRInvoicing } from "./components/KDRInvoicing";
-import { ChatInterface } from "./components/ChatInterface";
 import { ChatWindow } from "./components/chat/ChatWindow";
 
 export default function App() {

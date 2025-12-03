@@ -1,4 +1,3 @@
-import React from 'react'
 
 export function MessageBubble({ role, text, timestamp, attachments }: { role: 'user' | 'assistant'; text: string; timestamp: number; attachments?: { id: string; name: string; type: string; url?: string }[] }) {
   const isUser = role === 'user'
@@ -24,4 +23,3 @@ export function MessageBubble({ role, text, timestamp, attachments }: { role: 'u
     </div>
   )
 }
-

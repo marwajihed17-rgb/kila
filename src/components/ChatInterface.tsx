@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import Pusher from 'pusher-js';
+import Pusher, { Channel } from 'pusher-js';
 import { Send, LogOut, User as UserIcon, MessageCircle, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -29,7 +29,7 @@ export function ChatInterface({ onBack, onLogout }: ChatInterfaceProps) {
   const [conversationIat, setConversationIat] = useState<number | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const pusherRef = useRef<Pusher | null>(null);
-  const channelRef = useRef<Pusher.Channel | null>(null);
+  const channelRef = useRef<Channel | null>(null);
 
   // Initialize conversation and load data from localStorage
   useEffect(() => {
