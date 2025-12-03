@@ -1,0 +1,81 @@
+{
+  "name": "AI Chat - With Vercel Pusher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "onReceived",
+        "responseCode": 200,
+        "responseData": "={\"success\": true, \"message\": \"Processing your request...\"}",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a helpful AI assistant.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $('Webhook').item.json.text || $('Webhook').item.json.message }}\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1500\n}",
+        "options": {}
+      },
+      "id": "http-ai",
+      "name": "OpenAI - Get AI Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kila-eta.vercel.app/api/receive-response",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"conversationId\": \"{{ $('Webhook').item.json.conversationId }}\",\n  \"reply\": \"{{ $('OpenAI - Get AI Response').item.json.choices[0].message.content }}\",\n  \"text\": \"{{ $('OpenAI - Get AI Response').item.json.choices[0].message.content }}\",\n  \"message\": \"{{ $('OpenAI - Get AI Response').item.json.choices[0].message.content }}\",\n  \"timestamp\": {{ $now.toMillis() }}\n}",
+        "options": {}
+      },
+      "id": "http-vercel",
+      "name": "POST to Vercel API (Pusher Broadcast)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Get AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Get AI Response": {
+      "main": [
+        [
+          {
+            "node": "POST to Vercel API (Pusher Broadcast)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
