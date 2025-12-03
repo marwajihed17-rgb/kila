@@ -1,0 +1,86 @@
+{
+  "name": "AI Chat Assistant with Pusher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "onReceived",
+        "responseCode": 200,
+        "responseData": "={\"success\": true, \"message\": \"Processing your request...\"}",
+        "options": {}
+      },
+      "id": "webhook-1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add your AI processing logic here\nconst text = $input.item.json.text || $input.item.json.message;\nconst conversationId = $input.item.json.conversationId;\nconst username = $input.item.json.username;\n\n// Simple echo response (replace with your AI API call)\nconst aiResponse = `Hello ${username}! You said: ${text}`;\n\nreturn {\n  conversationId: conversationId,\n  reply: aiResponse,\n  timestamp: Date.now()\n};"
+      },
+      "id": "code-1",
+      "name": "Process with AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://your-app.vercel.app/api/receive-response",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "conversationId",
+              "value": "={{ $json.conversationId }}"
+            },
+            {
+              "name": "reply",
+              "value": "={{ $json.reply }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-1",
+      "name": "Send to Vercel API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process with AI": {
+      "main": [
+        [
+          {
+            "node": "Send to Vercel API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
