@@ -18,6 +18,9 @@ const N8N_WEBHOOK_URLS = {
   'kdr invoicing': import.meta.env.VITE_N8N_KDR_INVOICING_WEBHOOK_URL || '',
 };
 
+// Debug: Log webhook URLs on module load
+console.log('🔍 N8N_WEBHOOK_URLS configured:', N8N_WEBHOOK_URLS);
+
 class ApiService {
   // Parse CSV data from Google Sheets
   private async fetchSheetData(): Promise<SheetRow[]> {
@@ -153,9 +156,14 @@ class ApiService {
     };
 
     // Send to n8n webhook if category is provided
+    console.log(`🔍 Attempting to send message with category: "${category}"`);
+    console.log(`🔍 Webhook URL for category:`, N8N_WEBHOOK_URLS[category]);
+    console.log(`🔍 Condition check: category=${!!category}, URL exists=${!!N8N_WEBHOOK_URLS[category]}`);
+
     if (category && N8N_WEBHOOK_URLS[category]) {
       try {
         const webhookUrl = N8N_WEBHOOK_URLS[category];
+        console.log(`✅ Sending to n8n webhook: ${webhookUrl}`);
 
         // Get username from userId or use 'unknown'
         const username = userId || 'unknown';
@@ -228,6 +236,10 @@ class ApiService {
     }
 
     // Fallback response if no category or webhook URL
+    console.warn(`⚠️ Webhook not configured for category: "${category}"`);
+    console.warn(`⚠️ Available webhooks:`, Object.keys(N8N_WEBHOOK_URLS));
+    console.warn(`⚠️ URL for "${category}":`, N8N_WEBHOOK_URLS[category]);
+
     const botResponse: Message = {
       id: `bot_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       text: 'Message received. Processing module not configured.',
