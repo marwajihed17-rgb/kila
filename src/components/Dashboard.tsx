@@ -1,11 +1,11 @@
-import { FileText, Package, BarChart3, Receipt, LogOut, User as UserIcon, MessageCircle } from 'lucide-react';
+import { FileText, Package, BarChart3, Receipt, LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import logo from 'figma:asset/220dab80c3731b3a44f7ce1394443acd5caffa99.png';
 import { User } from '../types/api';
 import { useEffect, useState } from 'react';
 
 interface DashboardProps {
-  onNavigate: (page: 'invoice' | 'kdr' | 'ga' | 'kdr-invoicing' | 'chat') => void;
+  onNavigate: (page: 'invoice' | 'kdr' | 'ga' | 'kdr-invoicing') => void;
   onLogout: () => void;
 }
 
@@ -29,17 +29,10 @@ export function Dashboard({ onNavigate, onLogout }: DashboardProps) {
 
   const cards = [
     {
-      id: 'chat' as const,
-      icon: MessageCircle,
-      title: 'AI Chat Assistant',
-      description: 'Real-time AI assistance with streaming responses',
-      moduleKey: 'chat',
-    },
-    {
       id: 'invoice' as const,
       icon: FileText,
-      title: 'Invoice with Automation',
-      description: 'Automated invoice processing',
+      title: 'Invoice Processing',
+      description: 'Automated invoice processing and management',
       moduleKey: 'invoice',
     },
     {
