@@ -12,10 +12,10 @@ const GOOGLE_SHEET_URL = import.meta.env.VITE_GOOGLE_SHEET_URL;
 
 // n8n Webhook URLs
 const N8N_WEBHOOK_URLS = {
-  invoice: import.meta.env.VITE_N8N_INVOICE_WEBHOOK_URL || 'https://n8n.srv1009033.hstgr.cloud/webhook/invoice',
-  kdr: import.meta.env.VITE_N8N_KDR_WEBHOOK_URL || 'https://n8n.srv1009033.hstgr.cloud/webhook/kdr',
-  ga: import.meta.env.VITE_N8N_GA_WEBHOOK_URL || 'https://n8n.srv1009033.hstgr.cloud/webhook/ga',
-  'kdr invoicing': import.meta.env.VITE_N8N_KDR_INVOICING_WEBHOOK_URL || 'https://n8n.srv1009033.hstgr.cloud/webhook/KDRprocessing',
+  invoice: import.meta.env.VITE_N8N_INVOICE_WEBHOOK_URL || '',
+  kdr: import.meta.env.VITE_N8N_KDR_WEBHOOK_URL || '',
+  ga: import.meta.env.VITE_N8N_GA_WEBHOOK_URL || '',
+  'kdr invoicing': import.meta.env.VITE_N8N_KDR_INVOICING_WEBHOOK_URL || '',
 };
 
 class ApiService {
@@ -105,10 +105,11 @@ class ApiService {
         email: matchedRow.email,
       };
 
+      const rnd = cryptoRandomToken();
       return {
         success: true,
         user: user,
-        token: btoa(`${username}:${Date.now()}`)
+        token: rnd
       };
     } catch (error) {
       console.error('Authentication error:', error);
@@ -143,7 +144,7 @@ class ApiService {
     userId?: string
   ): Promise<MessageResponse> {
     const message: Message = {
-      id: Date.now(),
+      id: `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       text,
       sender,
       timestamp: new Date().toISOString(),
@@ -191,7 +192,7 @@ class ApiService {
         }
 
         const botResponse: Message = {
-          id: Date.now() + 1,
+          id: `bot_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           text: botResponseText,
           sender: 'bot',
           timestamp: new Date().toISOString(),
@@ -209,7 +210,7 @@ class ApiService {
 
         // Return error response
         const botResponse: Message = {
-          id: Date.now() + 1,
+          id: `bot_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           text: 'Sorry, there was an error processing your message. Please try again.',
           sender: 'bot',
           timestamp: new Date().toISOString(),
@@ -228,7 +229,7 @@ class ApiService {
 
     // Fallback response if no category or webhook URL
     const botResponse: Message = {
-      id: Date.now() + 1,
+      id: `bot_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       text: 'Message received. Processing module not configured.',
       sender: 'bot',
       timestamp: new Date().toISOString(),
@@ -256,3 +257,13 @@ class ApiService {
 }
 
 export const apiService = new ApiService();
+
+function cryptoRandomToken(): string {
+  const arr = new Uint8Array(24);
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+    window.crypto.getRandomValues(arr);
+  } else {
+    for (let i = 0; i < arr.length; i++) arr[i] = Math.floor(Math.random() * 256);
+  }
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}

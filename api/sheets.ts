@@ -10,7 +10,8 @@ export default async function handler(
   res: VercelResponse
 ) {
   // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -83,5 +84,3 @@ export default async function handler(
     });
   }
 }
-
-  

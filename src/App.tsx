@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LoginPage } from "./components/LoginPage";
 import { Dashboard } from "./components/Dashboard";
 import { InvoiceProcessing } from "./components/InvoiceProcessing";
@@ -12,10 +12,12 @@ export default function App() {
     "login" | "dashboard" | "invoice" | "kdr" | "ga" | "kdr-invoicing" | "chat"
   >("login");
 
-  const initialPath = typeof window !== 'undefined' ? window.location.pathname : '/'
-  if (initialPath === '/chat' && currentPage !== 'chat') {
-    setCurrentPage('chat')
-  }
+  useEffect(() => {
+    const initialPath = typeof window !== 'undefined' ? window.location.pathname : '/'
+    if (initialPath === '/chat') {
+      setCurrentPage('chat')
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0e1a] via-[#1a1233] to-[#0f1419] relative overflow-hidden">

@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import crypto from 'crypto';
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: 'user' | 'bot';
   timestamp: string;
@@ -15,8 +16,8 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -29,6 +30,16 @@ export default async function handler(
       // Store a new message
       const { text, sender, category, userId } = req.body;
 
+      if (typeof text !== 'string' || text.trim().length === 0 || text.length > 5000) {
+        return res.status(400).json({ error: 'Invalid text' });
+      }
+      if (sender !== 'user' && sender !== 'bot') {
+        return res.status(400).json({ error: 'Invalid sender' });
+      }
+      if (category && !['invoice', 'kdr', 'ga'].includes(category)) {
+        return res.status(400).json({ error: 'Invalid category' });
+      }
+
       if (!text || !sender) {
         return res.status(400).json({
           error: 'Text and sender are required'
@@ -36,7 +47,7 @@ export default async function handler(
       }
 
       const message: Message = {
-        id: Date.now(),
+        id: crypto.randomBytes(16).toString('hex'),
         text,
         sender,
         timestamp: new Date().toISOString(),
@@ -47,7 +58,7 @@ export default async function handler(
       // In production, save to database here
       // For now, just return the message with a simulated bot response
       const botResponse: Message = {
-        id: Date.now() + 1,
+        id: crypto.randomBytes(16).toString('hex'),
         text: `Message received: "${text}". Processing...`,
         sender: 'bot',
         timestamp: new Date().toISOString(),

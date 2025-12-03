@@ -134,11 +134,10 @@ export function ChatInterface({ onBack, onLogout }: ChatInterfaceProps) {
     const channel = pusher.subscribe(`private-chat-${conversationId}`);
     channelRef.current = channel;
 
-    channel.bind('new-message', (payload: { conversationId: string; reply: string; timestamp: number }) => {
-      if (payload.conversationId !== conversationId) return;
+    channel.bind('message', (payload: { role: 'assistant'; text: string; timestamp: number }) => {
       const aiMessage: Message = {
         id: `ai_${payload.timestamp}_${Math.random().toString(36).substring(7)}`,
-        text: payload.reply,
+        text: payload.text,
         sender: 'ai',
         timestamp: payload.timestamp
       };

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Papa from 'papaparse';
+import crypto from 'crypto';
 
 interface User {
   id: string;
@@ -22,8 +23,8 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -139,12 +140,11 @@ export default async function handler(
       email: matchedRow.email,
     };
 
-    console.log(`User ${username} authenticated successfully with modules:`, modules);
-
+    const token = crypto.randomBytes(24).toString('hex');
     return res.status(200).json({
       success: true,
       user: user,
-      token: Buffer.from(`${username}:${Date.now()}`).toString('base64')
+      token
     });
 
   } catch (error) {

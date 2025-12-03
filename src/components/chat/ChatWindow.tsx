@@ -32,21 +32,25 @@ export function ChatWindow() {
   }, [])
 
   useEffect(() => {
-    if (!conversationId && !username) return
+    if (!conversationId) return
     const token = localStorage.getItem('authToken') || ''
     fetch('/api/session-init', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ conversationId: conversationId || username })
+      body: JSON.stringify({ conversationId })
     }).then(async r => {
-      if (!r.ok) return
-      const data = await r.json()
+      if (!r.ok) {
+        const text = await r.text().catch(() => '')
+        console.error('session-init failed', r.status, text)
+        return
+      }
+      const data = await r.json().catch(() => ({} as any))
       if (data.conversationToken && data.iat) {
         setConversationToken(data.conversationToken)
         setConversationIat(data.iat)
       }
-    }).catch(() => {})
-  }, [conversationId, username])
+    }).catch(err => console.error('session-init error', err))
+  }, [conversationId])
 
   useEffect(() => {
     if (!conversationToken || !conversationIat) return
@@ -60,26 +64,18 @@ export function ChatWindow() {
         endpoint: '/api/pusher-auth',
         transport: 'ajax',
         headers: { Authorization: `Bearer ${token}` },
-        params: { conversationId: conversationId || username, conversationToken, iat: String(conversationIat) }
+        params: { conversationId, conversationToken, iat: String(conversationIat) }
       }
     })
-    const channelName = conversationId ? `private-chat-${conversationId}` : `private-chat-${username}`
+    const channelName = `private-chat-${conversationId}`
     let channel = pusher.subscribe(channelName)
     channel.bind('message', (data: { role: 'assistant'; text: string; timestamp: number }) => {
       const msg: ChatMessage = { id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, role: 'assistant', text: data.text, timestamp: data.timestamp }
       setMessages(prev => [...prev, msg])
       setIsTyping(false)
     })
-    const fallback = conversationId ? `chat-${conversationId}` : `chat-${username}`
-    const publicChannel = pusher.subscribe(fallback)
-    publicChannel.bind('message', (data: { role: 'assistant'; text: string; timestamp: number }) => {
-      const msg: ChatMessage = { id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, role: 'assistant', text: data.text, timestamp: data.timestamp }
-      setMessages(prev => [...prev, msg])
-      setIsTyping(false)
-    })
     return () => {
-      try { channel.unbind_all(); pusher.unsubscribe(channelName) } catch {}
-      try { publicChannel.unbind_all(); pusher.unsubscribe(fallback) } catch {}
+      try { channel.unbind_all(); pusher.unsubscribe(channelName) } catch (err) { console.error('pusher cleanup error', err) }
       pusher.disconnect()
     }
   }, [conversationToken, conversationIat, conversationId, username])

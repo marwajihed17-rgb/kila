@@ -27,6 +27,10 @@ export async function sendMessageToN8N(params: {
   if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) })
   if (!res.ok) throw new Error(`Webhook failed: ${res.status}`)
-  return await res.json().catch(() => ({}))
+  try {
+    return await res.json()
+  } catch (err) {
+    console.error('n8n response JSON parse error', err)
+    return {}
+  }
 }
-

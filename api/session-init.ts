@@ -1,28 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import * as crypto from 'crypto'
+import crypto from 'crypto'
 
 interface SessionInitBody {
   conversationId: string
 }
 
-function decodeToken(t: string) {
-  try {
-    const raw = Buffer.from(t, 'base64').toString('utf8')
-    const idx = raw.indexOf(':')
-    if (idx === -1) return { username: '' }
-    return { username: raw.slice(0, idx) }
-  } catch {
-    return { username: '' }
-  }
-}
-
-function sign(username: string, conversationId: string, iat: number, secret: string) {
-  const payload = `${username}:${conversationId}:${iat}`
-  return crypto.createHmac('sha256', secret).update(payload).digest('hex')
+function base64url(input: Buffer | string): string {
+  const b = Buffer.isBuffer(input) ? input : Buffer.from(input)
+  return b.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*'
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
@@ -44,24 +34,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ success: false, error: 'Unauthorized' })
   }
 
-  const token = authHeader.substring('Bearer '.length).trim()
-
   if (!req.body || typeof req.body !== 'object') {
     return res.status(400).json({ success: false, error: 'Invalid request body' })
   }
 
   const { conversationId } = req.body as SessionInitBody
-  if (!conversationId || typeof conversationId !== 'string' || conversationId.trim().length < 3) {
-    return res.status(400).json({ success: false, error: 'Valid conversationId is required' })
-  }
-
-  const { username } = decodeToken(token)
-  if (!username) {
-    return res.status(401).json({ success: false, error: 'Unauthorized' })
+  if (!conversationId || typeof conversationId !== 'string' || conversationId.trim().length < 3 || !/[a-zA-Z0-9]/.test(conversationId)) {
+    return res.status(400).json({ success: false, error: 'Invalid conversationId' })
   }
 
   const iat = Date.now()
-  const conversationToken = sign(username, conversationId.trim(), iat, secret)
+  const payload = { conversationId: conversationId.trim(), iat }
+  const payloadStr = JSON.stringify(payload)
+  const signature = crypto.createHmac('sha256', secret).update(payloadStr).digest()
+  const conversationToken = `${base64url(payloadStr)}.${base64url(signature)}`
   return res.status(200).json({ success: true, conversationToken, iat })
 }
-
